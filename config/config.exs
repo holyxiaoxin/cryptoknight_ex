@@ -1,9 +1,9 @@
 use Mix.Config
 
 config :app,
-  bot_name: ""
+  bot_name: "cryptoknight"
 
 config :nadia,
-  token: ""
+  token: System.get_env("CRYPTOKNIGHT_BOT_TOKEN")
 
 import_config "#{Mix.env}.exs"

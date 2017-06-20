@@ -1,4 +1,6 @@
 defmodule App.Commands do
+  @api_base_endpoint "https://api.coinmarketcap.com/v1/"
+
   use App.Router
   use App.Commander
 
@@ -25,6 +27,39 @@ defmodule App.Commands do
   # "Module, :function" instead od "do..end"
   command "outside", Outside, :outside
   # For the sake of this tutorial, I'll define everything here
+
+  command "list" do
+    # https://api.coinmarketcap.com/v1/ticker/ethereum
+    # {
+    #     "id": "ethereum",
+    #     "name": "Ethereum",
+    #     "symbol": "ETH",
+    #     "rank": "2",
+    #     "price_usd": "376.111",
+    #     "price_btc": "0.150565",
+    #     "24h_volume_usd": "709202000.0",
+    #     "market_cap_usd": "34845579159.0",
+    #     "available_supply": "92647062.0",
+    #     "total_supply": "92647062.0",
+    #     "percent_change_1h": "0.32",
+    #     "percent_change_24h": "1.18",
+    #     "percent_change_7d": "-2.41",
+    #     "last_updated": "1497966276"
+    # }
+
+    api_method = "ticker/"
+    tickers = ["bitcoin", "ethereum", "ripple", "antshares"]
+
+    result = tickers |> Enum.map(&Task.async(fn -> HTTPoison.get!("#{@api_base_endpoint}#{api_method}#{&1}/") end))
+                  |> Enum.map(&Task.await(&1, 30000))
+                  |> Enum.reduce("", fn(resp, acc) ->
+                    %HTTPoison.Response{body: body} = resp
+                    %{"name" => name, "price_usd" => price_usd} = List.first(Poison.decode!(body))
+                    acc <> "name: #{name}, price_usd: #{price_usd} \n"
+                  end)
+
+    {:ok, _} = send_message result
+  end
 
   command "question" do
     Logger.log :info, "Command /question"
