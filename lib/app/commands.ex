@@ -1,5 +1,6 @@
 defmodule App.Commands do
-  @api_base_endpoint "https://api.coinmarketcap.com/v1/"
+  @coinmarketcap_endpoint "https://api.coinmarketcap.com/v1/"
+  @bittrex_endpoint "https://bittrex.com/api/v1.1/public/"
 
   use App.Router
   use App.Commander
@@ -28,6 +29,39 @@ defmodule App.Commands do
   command "outside", Outside, :outside
   # For the sake of this tutorial, I'll define everything here
 
+  command "list b" do
+    # https://bittrex.com/api/v1.1/public/getticker?market=BTC-ETH
+    # {
+    #   success: true,
+    #   message: "",
+    #   result: {
+    #     Bid: 0.11000005,
+    #     Ask: 0.11000025,
+    #     Last: 0.11000005
+    #   }
+    # }
+
+    api_method = "getticker?market="
+    tickers = [{"Ethereum", "BTC-ETH"}, {"Ripple", "BTC-XRP"}, {"Litecoin", "BTC-LTC"}, {"Ethereum Classic", "BTC-ETC"}, {"AntShares", "BTC-ANS"}, {"Golem", "BTC-GNT"}, {"Quantum Resistant Ledger", "BTC-QRL"}]
+
+    result = tickers |> Enum.map(fn({name, market}) ->
+                        Task.async(fn -> {name, HTTPoison.get!("#{@bittrex_endpoint}#{api_method}#{market}")} end)
+                     end)
+                     |> Enum.map(&Task.await(&1, 30000))
+                     |> Enum.reduce("", fn({name, resp}, acc) ->
+                        %HTTPoison.Response{body: body} = resp
+                        %{"success" => success, "result" => result} = Poison.decode!(body)
+                        case success do
+                          true ->
+                            %{"Bid" => bid, "Ask" => ask, "Last" => last }  = result
+                            acc <> "#{name}: [#{bid} bid] [#{ask} ask] [#{last} last] \n"
+                          _ -> "error"
+                        end
+                     end)
+
+    {:ok, _} = send_message result
+  end
+
   command "list" do
     # https://api.coinmarketcap.com/v1/ticker/ethereum
     # {
@@ -48,14 +82,14 @@ defmodule App.Commands do
     # }
 
     api_method = "ticker/"
-    tickers = ["bitcoin", "ethereum", "ripple", "antshares"]
+    tickers = ["bitcoin", "ethereum", "ripple", "litecoin", "ethereum-classic", "antshares", "golem-network-tokens", "quantum-resistant-ledger"]
 
-    result = tickers |> Enum.map(&Task.async(fn -> HTTPoison.get!("#{@api_base_endpoint}#{api_method}#{&1}/") end))
+    result = tickers |> Enum.map(&Task.async(fn -> HTTPoison.get!("#{@coinmarketcap_endpoint}#{api_method}#{&1}/") end))
                   |> Enum.map(&Task.await(&1, 30000))
                   |> Enum.reduce("", fn(resp, acc) ->
                     %HTTPoison.Response{body: body} = resp
-                    %{"name" => name, "price_usd" => price_usd} = List.first(Poison.decode!(body))
-                    acc <> "name: #{name}, price_usd: #{price_usd} \n"
+                    %{"name" => name, "price_usd" => price_usd, "price_btc" => price_btc} = List.first(Poison.decode!(body))
+                    acc <> "#{name}: [#{price_usd} usd], [#{price_btc} btc] \n"
                   end)
 
     {:ok, _} = send_message result
