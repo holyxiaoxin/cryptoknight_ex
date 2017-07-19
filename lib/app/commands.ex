@@ -11,7 +11,7 @@ defmodule App.Commands do
   # using the macro `command "command"`.
   command ["hello", "hi"] do
     # Logger module injected from App.Commander
-    Logger.log :info, "Command /hello or /hi"
+    Logger.info "Command /hello or /hi", commands: 1
 
     # You can use almost any function from the Nadia core without
     # having to specify the current chat ID as you can see below.
@@ -30,6 +30,7 @@ defmodule App.Commands do
   # For the sake of this tutorial, I'll define everything here
 
   command "list b" do
+    Logger.info "Command /list b", commands: 1
     # https://bittrex.com/api/v1.1/public/getticker?market=BTC-ETH
     # {
     #   success: true,
@@ -63,6 +64,7 @@ defmodule App.Commands do
   end
 
   command "list" do
+    Logger.info "Command /list", commands: 1
     # https://api.coinmarketcap.com/v1/ticker/ethereum
     # {
     #     "id": "ethereum",
@@ -92,11 +94,13 @@ defmodule App.Commands do
                     acc <> "#{name}: [#{price_usd} usd], [#{price_btc} btc] \n"
                   end)
 
+    Logger.info result
+
     {:ok, _} = send_message result
   end
 
   command "question" do
-    Logger.log :info, "Command /question"
+    Logger.info "Command /question", commands: 1
 
     {:ok, _} = send_message "What's the best JoJo?",
       # Nadia.Model is aliased from App.Commander
@@ -127,7 +131,7 @@ defmodule App.Commands do
 
   # You can create command interfaces for callback querys using this macro.
   callback_query_command "choose" do
-    Logger.log :info, "Callback Query Command /choose"
+    Logger.info "Callback Query Command /choose", commands: 1
 
     case update.callback_query.data do
       "/choose joseph" ->
@@ -141,7 +145,7 @@ defmodule App.Commands do
   # Be sure to enable inline mode first: https://core.telegram.org/bots/inline
   # Try by typping "@your_bot_name /what-is something"
   inline_query_command "what-is" do
-    Logger.log :info, "Inline Query Command /what-is"
+    Logger.info "Inline Query Command /what-is", commands: 1
 
     :ok = answer_inline_query [
       %InlineQueryResult.Article{
@@ -175,7 +179,7 @@ defmodule App.Commands do
   # will know exatcly where to find it's chat ID. Same goes for the other kinds.
 
   inline_query_command "foo" do
-    Logger.log :info, "Inline Query Command /foo"
+    Logger.info "Inline Query Command /foo", commands: 1
     # Where do you think the message will go for?
     # If you answered that it goes to the user private chat with this bot,
     # you're right. Since inline querys can't receive nothing other than

@@ -22,6 +22,7 @@ defmodule App.Mixfile do
       {:nadia, "~> 0.4.1"},
       {:httpoison, "~> 0.11.1"},
       {:poison, "~> 3.0"},
+      {:logger_file_backend, "~> 0.0.10"},
     ]
   end
 
