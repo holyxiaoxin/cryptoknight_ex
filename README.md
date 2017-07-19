@@ -17,6 +17,8 @@ mix
 ### To release
 
 ```
+MIX_ENV=prod mix deps.get
+MIX_ENV=prod mix deps.compile
 MIX_ENV=prod mix compile
 MIX_ENV=prod elixir --detached --sname cryptoknight -S mix
 ```
