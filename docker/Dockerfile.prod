@@ -1,0 +1,11 @@
+FROM elixir:latest
+
+WORKDIR /app
+
+ADD . /app
+
+RUN MIX_ENV=prod mix local.hex --force &&\
+    MIX_ENV=prod mix local.rebar --force &&\
+    MIX_ENV=prod mix deps.get
+
+ENTRYPOINT /app/docker/docker-entrypoint.prod.sh

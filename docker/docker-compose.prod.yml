@@ -1,0 +1,9 @@
+version: '2'
+services:
+  default:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.prod
+    image: cryptobot_ex
+    volumes:
+     - ../log:/app/log

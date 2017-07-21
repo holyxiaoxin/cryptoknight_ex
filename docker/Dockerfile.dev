@@ -1,0 +1,11 @@
+FROM elixir:latest
+
+WORKDIR /app
+
+ADD . /app
+
+RUN mix local.hex --force &&\
+    mix local.rebar --force &&\
+    mix deps.get
+
+ENTRYPOINT /app/docker/docker-entrypoint.dev.sh
