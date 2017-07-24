@@ -4,6 +4,13 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.prod
+      args:
+        - CRYPTOKNIGHT_BOT_NAME
+        - CRYPTOKNIGHT_BOT_TOKEN
     image: cryptobot_ex
+    entrypoint:
+      - /app/docker/docker-entrypoint.prod.sh
+      - ${CRYPTOKNIGHT_BOT_NAME}
+      - ${CRYPTOKNIGHT_BOT_TOKEN}
     volumes:
-     - ../log:/app/log
+      - ../log:/app/log

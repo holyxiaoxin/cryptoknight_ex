@@ -17,5 +17,3 @@ erl_crash.dump
 *.ez
 
 /log
-
-docker/*.env

@@ -2,9 +2,6 @@
 
 cd /app
 
-. ./docker/prod.env
-. ./docker/setup_env.sh
-
-MIX_ENV=prod mix deps.compile
-MIX_ENV=prod mix compile
+export CRYPTOKNIGHT_BOT_NAME=$1
+export CRYPTOKNIGHT_BOT_TOKEN=$2
 MIX_ENV=prod mix server

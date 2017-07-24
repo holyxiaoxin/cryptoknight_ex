@@ -4,8 +4,14 @@ WORKDIR /app
 
 ADD . /app
 
+ARG CRYPTOKNIGHT_DEV_BOT_NAME
+ARG CRYPTOKNIGHT_DEV_BOT_TOKEN
+
 RUN mix local.hex --force &&\
     mix local.rebar --force &&\
-    mix deps.get
+    mix deps.get &&\
+    mix deps.compile
 
-ENTRYPOINT /app/docker/docker-entrypoint.dev.sh
+RUN CRYPTOKNIGHT_DEV_BOT_NAM=${CRYPTOKNIGHT_DEV_BOT_NAME} \
+    CRYPTOKNIGHT_DEV_BOT_TOKEN=${CRYPTOKNIGHT_DEV_BOT_TOKEN} \
+    mix compile
