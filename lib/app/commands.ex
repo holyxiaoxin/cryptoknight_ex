@@ -48,7 +48,7 @@ defmodule App.Commands do
       {"Ripple", "BTC-XRP"},
       {"Litecoin", "BTC-LTC"},
       {"Ethereum Classic", "BTC-ETC"},
-      {"AntShares", "BTC-ANS"},
+      {"NEO", "BTC-ANS"},
       {"Golem", "BTC-GNT"},
       {"Quantum Resistant Ledger", "BTC-QRL"},
       {"Ten X", "BTC-PAY"},
@@ -93,7 +93,7 @@ defmodule App.Commands do
     # }
 
     api_method = "ticker/"
-    tickers = ["bitcoin", "ethereum", "ripple", "litecoin", "ethereum-classic", "antshares", "golem-network-tokens", "quantum-resistant-ledger", "tenx"]
+    tickers = ["bitcoin", "ethereum", "ripple", "litecoin", "ethereum-classic", "neo", "golem-network-tokens", "quantum-resistant-ledger", "tenx"]
 
     result = tickers |> Enum.map(&Task.async(fn -> HTTPoison.get!("#{@coinmarketcap_endpoint}#{api_method}#{&1}/") end))
                   |> Enum.map(&Task.await(&1, 30000))
