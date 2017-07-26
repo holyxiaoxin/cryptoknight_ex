@@ -23,6 +23,7 @@ defmodule App.Mixfile do
       {:httpoison, "~> 0.11.1"},
       {:poison, "~> 3.0"},
       {:logger_file_backend, "~> 0.0.10"},
+      {:math, "~> 0.3.0"},
     ]
   end
 

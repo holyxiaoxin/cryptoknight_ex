@@ -6,6 +6,7 @@ defmodule App.Commands do
   use App.Commander
 
   alias App.Commands.Outside
+  alias App.Satoshi
 
   # You can create commands in the format `/command` by
   # using the macro `command "command"`.
@@ -64,7 +65,11 @@ defmodule App.Commands do
                         case success do
                           true ->
                             %{"Bid" => bid, "Ask" => ask, "Last" => last }  = result
-                            acc <> "#{name}: [#{bid} bid] [#{ask} ask] [#{last} last] \n"
+                            # bid = Satoshi.to_i(bid) |> Satoshi.humanize(round: 2)
+                            # ask = Satoshi.to_i(ask) |> Satoshi.humanize(round: 2)
+                            last = Satoshi.to_i(last) |> Satoshi.humanize(round: 2)
+                            # acc <> "#{name}: [#{bit_sat} bid] [#{ask_sat} ask] [#{last_sat} last] \n"
+                            acc <> "#{name}: [#{last} last] \n"
                           _ -> "error"
                         end
                      end)
@@ -100,6 +105,11 @@ defmodule App.Commands do
                   |> Enum.reduce("", fn(resp, acc) ->
                     %HTTPoison.Response{body: body} = resp
                     %{"name" => name, "price_usd" => price_usd, "price_btc" => price_btc} = List.first(Poison.decode!(body))
+                    price_usd = String.to_float(price_usd)
+                    if price_usd < 1 do
+                      price_usd = Satoshi.to_sf(price_usd, 3)
+                    end
+                    price_btc = Satoshi.to_i(String.to_float(price_btc)) |> Satoshi.humanize(round: 2)
                     acc <> "#{name}: [#{price_usd} usd], [#{price_btc} btc] \n"
                   end)
 
