@@ -34,7 +34,7 @@ CRYPTOKNIGHT_BOT_TOKEN=xxx
 ```
 
 ### To develop
-docker-compose -f docker/docker-compose.dev.yml up
+docker-compose -f docker/docker-compose.dev.yml up --build
 
 ### To release
-docker-compose -f docker/docker-compose.prod.yml up -d
+docker-compose -f docker/docker-compose.prod.yml up -d --build
