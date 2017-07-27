@@ -105,10 +105,7 @@ defmodule App.Commands do
                   |> Enum.reduce("", fn(resp, acc) ->
                     %HTTPoison.Response{body: body} = resp
                     %{"name" => name, "price_usd" => price_usd, "price_btc" => price_btc} = List.first(Poison.decode!(body))
-                    price_usd = String.to_float(price_usd)
-                    if price_usd < 1 do
-                      price_usd = Satoshi.to_sf(price_usd, 3)
-                    end
+                    price_usd = Satoshi.to_sf(String.to_float(price_usd), 3)
                     price_btc = Satoshi.to_i(String.to_float(price_btc)) |> Satoshi.humanize(round: 2)
                     acc <> "#{name}: [#{price_usd} usd], [#{price_btc} btc] \n"
                   end)
