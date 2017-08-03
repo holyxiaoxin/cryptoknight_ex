@@ -14,3 +14,4 @@ services:
       - ${CRYPTOKNIGHT_BOT_TOKEN}
     volumes:
       - ../log:/app/log
+    restart: always
