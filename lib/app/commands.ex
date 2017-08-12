@@ -62,12 +62,10 @@ defmodule App.Commands do
                         %{"success" => success, "result" => result} = Poison.decode!(body)
                         case success do
                           true ->
-                            %{"Bid" => bid, "Ask" => ask, "Last" => last }  = result
-                            # bid = Satoshi.to_i(bid) |> Satoshi.humanize(round: 2)
-                            # ask = Satoshi.to_i(ask) |> Satoshi.humanize(round: 2)
+                            %{"Last" => last, "High" => high, "Low" => low }  = List.first(result)
                             last = Satoshi.to_i(last) |> Satoshi.humanize(round: 2)
                             # acc <> "#{name}: [#{bit_sat} bid] [#{ask_sat} ask] [#{last_sat} last] \n"
-                            acc <> "#{name}: [#{last} sat] \n"
+                            acc <> "#{name}: [last: #{last} sat] [high: #{high} sat] [low: #{low} sat] \n"
                           _ -> acc <> "error for GET #{bittrex_ticker_endpoint(market)} \n"
                         end
                      end)
@@ -114,9 +112,11 @@ defmodule App.Commands do
                         %HTTPoison.Response{body: body, status_code: status_code} = resp
                         case status_code do
                           200 ->
-                            %{"lastPrice" => last_price}  = Poison.decode!(body)
+                            %{"lastPrice" => last_price, "highPrice" => high_price, "lowPrice" => low_price}  = Poison.decode!(body)
                             last_price = Satoshi.to_i(String.to_float(last_price)) |> Satoshi.humanize(round: 2)
-                            acc <> "#{name}: [#{last_price} sat] \n"
+                            high_price = Satoshi.to_i(String.to_float(high_price)) |> Satoshi.humanize(round: 2)
+                            low_price = Satoshi.to_i(String.to_float(low_price)) |> Satoshi.humanize(round: 2)
+                            acc <> "#{name}: [last: #{last_price} sat] [high: #{high_price} sat] [low: #{low_price} sat] \n"
                           _ -> acc <> "error for GET #{binance_ticker_endpoint(symbol)} \n"
                         end
                      end)
@@ -301,7 +301,7 @@ defmodule App.Commands do
   end
 
   def bittrex_ticker_endpoint(market) do
-    "#{@bittrex_endpoint}getticker?market=#{market}"
+    "#{@bittrex_endpoint}getmarketsummary?market=#{market}"
   end
 
   def binance_ticker_endpoint(symbol) do
