@@ -1,6 +1,7 @@
 defmodule App.Commands do
   @coinmarketcap_endpoint "https://api.coinmarketcap.com/v1/"
   @bittrex_endpoint "https://bittrex.com/api/v1.1/public/"
+  @binance_endpoint "https://www.binance.com/api/v1/"
 
   use App.Router
   use App.Commander
@@ -43,7 +44,6 @@ defmodule App.Commands do
     #   }
     # }
 
-    api_method = "getticker?market="
     tickers = [
       {"Ethereum", "BTC-ETH"},
       {"Litecoin", "BTC-LTC"},
@@ -54,10 +54,10 @@ defmodule App.Commands do
     ]
 
     result = tickers |> Enum.map(fn({name, market}) ->
-                        Task.async(fn -> {name, HTTPoison.get!("#{@bittrex_endpoint}#{api_method}#{market}")} end)
+                        Task.async(fn -> {name, market, HTTPoison.get!(bittrex_ticker_endpoint(market))} end)
                      end)
                      |> Enum.map(&Task.await(&1, 30000))
-                     |> Enum.reduce("", fn({name, resp}, acc) ->
+                     |> Enum.reduce("", fn({name, market, resp}, acc) ->
                         %HTTPoison.Response{body: body} = resp
                         %{"success" => success, "result" => result} = Poison.decode!(body)
                         case success do
@@ -68,7 +68,56 @@ defmodule App.Commands do
                             last = Satoshi.to_i(last) |> Satoshi.humanize(round: 2)
                             # acc <> "#{name}: [#{bit_sat} bid] [#{ask_sat} ask] [#{last_sat} last] \n"
                             acc <> "#{name}: [#{last} sat] \n"
-                          _ -> "error"
+                          _ -> acc <> "error for GET #{bittrex_ticker_endpoint(market)} \n"
+                        end
+                     end)
+
+    {:ok, _} = send_message result
+  end
+
+  command "list bi" do
+    Logger.info "Command /list bi", commands: 1
+    # https://www.binance.com/api/v1/ticker/24hr?symbol=ETHBTC
+    # {
+    #   priceChange: "-0.00264200",
+    #   priceChangePercent: "-3.085",
+    #   weightedAvgPrice: "0.08515381",
+    #   prevClosePrice: "0.08564300",
+    #   lastPrice: "0.08300100",
+    #   bidPrice: "0.08277200",
+    #   askPrice: "0.08310100",
+    #   openPrice: "0.08564300",
+    #   highPrice: "0.08760100",
+    #   lowPrice: "0.08279400",
+    #   volume: "15608.52700000",
+    #   openTime: 1502446636253,
+    #   closeTime: 1502533036253,
+    #   fristId: 292345,
+    #   lastId: 309367,
+    #   count: 17023
+    # }
+
+    tickers = [
+      {"Ethereum", "ETHBTC"},
+      {"Litecoin", "LTCBTC"},
+      {"NEO", "NEOBTC"},
+      {"GAS", "GASBTC"},
+      {"BitConnect", "BCCBTC"},
+      {"Binance Coin", "BNBBTC"},
+    ]
+
+    result = tickers |> Enum.map(fn({name, symbol}) ->
+                        Task.async(fn -> {name, symbol, HTTPoison.get!(binance_ticker_endpoint(symbol))} end)
+                     end)
+                     |> Enum.map(&Task.await(&1, 30000))
+                     |> Enum.reduce("", fn({name, symbol, resp}, acc) ->
+                        %HTTPoison.Response{body: body, status_code: status_code} = resp
+                        case status_code do
+                          200 ->
+                            %{"lastPrice" => last_price}  = Poison.decode!(body)
+                            last_price = Satoshi.to_i(String.to_float(last_price)) |> Satoshi.humanize(round: 2)
+                            acc <> "#{name}: [#{last_price} sat] \n"
+                          _ -> acc <> "error for GET #{binance_ticker_endpoint(symbol)} \n"
                         end
                      end)
 
@@ -95,7 +144,6 @@ defmodule App.Commands do
     #     "last_updated": "1497966276"
     # }
 
-    api_method = "ticker/"
     tickers = [
       "bitcoin",
       "ethereum",
@@ -107,15 +155,19 @@ defmodule App.Commands do
       "tenx",
     ]
 
-    result = tickers |> Enum.map(&Task.async(fn -> HTTPoison.get!("#{@coinmarketcap_endpoint}#{api_method}#{&1}/") end))
-                  |> Enum.map(&Task.await(&1, 30000))
-                  |> Enum.reduce("", fn(resp, acc) ->
-                    %HTTPoison.Response{body: body} = resp
-                    %{"name" => name, "price_usd" => price_usd, "price_btc" => price_btc} = List.first(Poison.decode!(body))
-                    price_usd = Satoshi.to_sf(String.to_float(price_usd), 3)
-                    price_sat = Satoshi.to_i(String.to_float(price_btc)) |> Satoshi.humanize(round: 2)
-                    acc <> "#{name}: [#{price_usd} usd], [#{price_sat} sat] \n"
-                  end)
+    result = tickers |> Enum.map(&Task.async(fn -> {&1, HTTPoison.get!(coinmarketcap_ticker_endpoint(&1))} end))
+                     |> Enum.map(&Task.await(&1, 30000))
+                     |> Enum.reduce("", fn({ticker_name, resp}, acc) ->
+                        %HTTPoison.Response{body: body, status_code: status_code} = resp
+                        case status_code do
+                          200 ->
+                            %{"name" => name, "price_usd" => price_usd, "price_btc" => price_btc} = List.first(Poison.decode!(body))
+                            price_usd = Satoshi.to_sf(String.to_float(price_usd), 3)
+                            price_sat = Satoshi.to_i(String.to_float(price_btc)) |> Satoshi.humanize(round: 2)
+                            acc <> "#{name}: [#{price_usd} usd], [#{price_sat} sat] \n"
+                          _ -> acc <> "error for GET #{coinmarketcap_ticker_endpoint(ticker_name)} \n"
+                        end
+                      end)
 
     Logger.info result
 
@@ -242,5 +294,17 @@ defmodule App.Commands do
     Logger.log :warn, "Did not match the message"
 
     send_message "Sorry, I couldn't understand you"
+  end
+
+  defp coinmarketcap_ticker_endpoint(ticker) do
+    "#{@coinmarketcap_endpoint}ticker/#{ticker}/"
+  end
+
+  def bittrex_ticker_endpoint(market) do
+    "#{@bittrex_endpoint}getticker?market=#{market}"
+  end
+
+  def binance_ticker_endpoint(symbol) do
+    "#{@binance_endpoint}ticker/24hr?symbol=#{symbol}"
   end
 end
