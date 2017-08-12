@@ -46,11 +46,9 @@ defmodule App.Commands do
     api_method = "getticker?market="
     tickers = [
       {"Ethereum", "BTC-ETH"},
-      {"Ripple", "BTC-XRP"},
       {"Litecoin", "BTC-LTC"},
       {"Ethereum Classic", "BTC-ETC"},
-      {"NEO", "BTC-ANS"},
-      {"Golem", "BTC-GNT"},
+      {"NEO", "BTC-NEO"},
       {"Quantum Resistant Ledger", "BTC-QRL"},
       {"Ten X", "BTC-PAY"},
     ]
@@ -69,7 +67,7 @@ defmodule App.Commands do
                             # ask = Satoshi.to_i(ask) |> Satoshi.humanize(round: 2)
                             last = Satoshi.to_i(last) |> Satoshi.humanize(round: 2)
                             # acc <> "#{name}: [#{bit_sat} bid] [#{ask_sat} ask] [#{last_sat} last] \n"
-                            acc <> "#{name}: [#{last} last] \n"
+                            acc <> "#{name}: [#{last} sat] \n"
                           _ -> "error"
                         end
                      end)
@@ -98,7 +96,16 @@ defmodule App.Commands do
     # }
 
     api_method = "ticker/"
-    tickers = ["bitcoin", "ethereum", "ripple", "litecoin", "ethereum-classic", "neo", "golem-network-tokens", "quantum-resistant-ledger", "tenx"]
+    tickers = [
+      "bitcoin",
+      "ethereum",
+      "litecoin",
+      "ethereum-classic",
+      "neo",
+      "gas",
+      "quantum-resistant-ledger",
+      "tenx",
+    ]
 
     result = tickers |> Enum.map(&Task.async(fn -> HTTPoison.get!("#{@coinmarketcap_endpoint}#{api_method}#{&1}/") end))
                   |> Enum.map(&Task.await(&1, 30000))
@@ -106,8 +113,8 @@ defmodule App.Commands do
                     %HTTPoison.Response{body: body} = resp
                     %{"name" => name, "price_usd" => price_usd, "price_btc" => price_btc} = List.first(Poison.decode!(body))
                     price_usd = Satoshi.to_sf(String.to_float(price_usd), 3)
-                    price_btc = Satoshi.to_i(String.to_float(price_btc)) |> Satoshi.humanize(round: 2)
-                    acc <> "#{name}: [#{price_usd} usd], [#{price_btc} btc] \n"
+                    price_sat = Satoshi.to_i(String.to_float(price_btc)) |> Satoshi.humanize(round: 2)
+                    acc <> "#{name}: [#{price_usd} usd], [#{price_sat} sat] \n"
                   end)
 
     Logger.info result
