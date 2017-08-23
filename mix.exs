@@ -13,7 +13,7 @@ defmodule App.Mixfile do
   end
 
   def application do
-    [applications: [:logger, :nadia],
+    [applications: [:logger, :nadia, :redix],
      mod: {App, []}]
   end
 
@@ -24,6 +24,7 @@ defmodule App.Mixfile do
       {:poison, "~> 3.0"},
       {:logger_file_backend, "~> 0.0.10"},
       {:satoshi_ex, "~> 0.1.2"},
+      {:redix, ">= 0.0.0"},
     ]
   end
 

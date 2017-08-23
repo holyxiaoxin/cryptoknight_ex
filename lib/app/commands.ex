@@ -97,7 +97,6 @@ defmodule App.Commands do
 
     tickers = [
       {"Ethereum", "ETHBTC"},
-      {"Litecoin", "LTCBTC"},
       {"NEO", "NEOBTC"},
       {"GAS", "GASBTC"},
       {"BitConnect", "BCCBTC"},
@@ -147,12 +146,13 @@ defmodule App.Commands do
     tickers = [
       "bitcoin",
       "ethereum",
-      "litecoin",
       "ethereum-classic",
       "neo",
       "gas",
       "quantum-resistant-ledger",
       "tenx",
+      "nimiq",
+      "binance-coin",
     ]
 
     result = tickers |> Enum.map(&Task.async(fn -> {&1, HTTPoison.get!(coinmarketcap_ticker_endpoint(&1))} end))
@@ -173,6 +173,16 @@ defmodule App.Commands do
 
     {:ok, _} = send_message result
   end
+
+  command "redis" do
+    # Logger module injected from App.Commander
+    Logger.info "Command /redis", commands: 1
+
+    IO.inspect get_btc_from_redis_or_api
+
+    send_message "Hello World!"
+  end
+
 
   command "question" do
     Logger.info "Command /question", commands: 1
@@ -294,6 +304,37 @@ defmodule App.Commands do
     Logger.log :warn, "Did not match the message"
 
     send_message "Sorry, I couldn't understand you"
+  end
+
+  defp btc_in_usd do
+    api = "#{@coinmarketcap_endpoint}ticker/bitcoin/"
+    resp = HTTPoison.get!(api)
+    %HTTPoison.Response{body: body, status_code: status_code} = resp
+
+    case status_code do
+      200 ->
+        %{"price_usd" => price_usd} = List.first(Poison.decode!(body))
+        String.to_float(price_usd)
+      _ -> 0
+    end
+  end
+
+  # @res Float 3836.74
+  defp get_btc_from_redis_or_api do
+    {:ok, conn} = Redix.start_link()
+
+    redis_res = Redix.command(conn, ["GET", "btc_price_usd"])
+    case redis_res do
+      {:ok, price} ->
+        if (price != 0) && (price != nil) do
+          String.to_float(price)
+        else
+          price = btc_in_usd
+          Redix.command(conn, ["SET", "btc_price_usd", Float.to_string(price)])
+          price
+        end
+      _ -> 0 # redis is down?
+    end
   end
 
   defp coinmarketcap_ticker_endpoint(ticker) do
