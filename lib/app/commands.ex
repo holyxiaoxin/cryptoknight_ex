@@ -31,8 +31,8 @@ defmodule App.Commands do
   command "outside", Outside, :outside
   # For the sake of this tutorial, I'll define everything here
 
-  command "list b" do
-    Logger.info "Command /list b", commands: 1
+  command "lsb" do
+    Logger.info "Command /lsb", commands: 1
     # https://bittrex.com/api/v1.1/public/getticker?market=BTC-ETH
     # {
     #   success: true,
@@ -73,8 +73,8 @@ defmodule App.Commands do
     {:ok, _} = send_message result
   end
 
-  command "list bi" do
-    Logger.info "Command /list bi", commands: 1
+  command "lsbi" do
+    Logger.info "Command /lsbi", commands: 1
     # https://www.binance.com/api/v1/ticker/24hr?symbol=ETHBTC
     # {
     #   priceChange: "-0.00264200",
@@ -123,8 +123,8 @@ defmodule App.Commands do
     {:ok, _} = send_message result
   end
 
-  command "list" do
-    Logger.info "Command /list", commands: 1
+  command ["ls", "moon", "lambo"] do
+    Logger.info "Command /ls, /moon or /lambo", commands: 1
     # https://api.coinmarketcap.com/v1/ticker/ethereum
     # {
     #     "id": "ethereum",
@@ -303,7 +303,7 @@ defmodule App.Commands do
   message do
     Logger.log :warn, "Did not match the message"
 
-    send_message "Sorry, I couldn't understand you"
+    send_message "Try going to the /moon"
   end
 
   defp btc_in_usd do
