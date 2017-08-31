@@ -101,6 +101,7 @@ defmodule App.Commands do
       {"GAS", "GASBTC"},
       {"BitConnect", "BCCBTC"},
       {"Binance Coin", "BNBBTC"},
+      {"district0x", "DNTETH"},
     ]
 
     result = tickers |> Enum.map(fn({name, symbol}) ->
@@ -153,6 +154,7 @@ defmodule App.Commands do
       "tenx",
       "nimiq",
       "binance-coin",
+      "district0x",
     ]
 
     result = tickers |> Enum.map(&Task.async(fn -> {&1, HTTPoison.get!(coinmarketcap_ticker_endpoint(&1))} end))
