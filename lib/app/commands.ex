@@ -176,6 +176,66 @@ defmodule App.Commands do
     {:ok, _} = send_message result
   end
 
+  command "lm" do
+    Logger.info "Command /lm", commands: 1
+    # https://api.coinmarketcap.com/v1/ticker/
+    # [
+    # {
+    # id: "bitcoin",
+    # name: "Bitcoin",
+    # symbol: "BTC",
+    # rank: "1",
+    # price_usd: "4590.37",
+    # price_btc: "1.0",
+    # 24h_volume_usd: "1802990000.0",
+    # market_cap_usd: "75899986886.0",
+    # available_supply: "16534612.0",
+    # total_supply: "16534612.0",
+    # percent_change_1h: "-0.35",
+    # percent_change_24h: "0.71",
+    # percent_change_7d: "9.87",
+    # last_updated: "1504169964"
+    # },
+
+    trail = command_trail(update, "lm")
+
+    resp = HTTPoison.get!(coinmarketcap_ticker_endpoint)
+    %HTTPoison.Response{body: body, status_code: status_code} = resp
+    result =
+      case status_code do
+        200 ->
+          Poison.decode!(body)
+          |> Enum.reduce("", fn(%{
+            "name" => name,
+            "price_usd" => price_usd,
+            "price_btc" => price_btc,
+            "percent_change_1h" => percent_change_1h,
+            "percent_change_24h" => percent_change_24h,
+            "percent_change_7d" => percent_change_7d,
+            }, acc) ->
+              price_usd = Satoshi.to_sf(String.to_float(price_usd), 3)
+              price_sat = Satoshi.to_i(String.to_float(price_btc)) |> Satoshi.humanize(round: 2)
+              if (String.downcase(name) =~ String.downcase(trail)) do
+                acc <> "#{name}: [#{price_usd} usd], [#{price_sat} sat], [#{percent_change_1h}% 1h], [#{percent_change_24h}% 24h], [#{percent_change_7d}% 7d] \n"
+              else
+                acc
+              end
+          end)
+        _ -> "error for GET #{coinmarketcap_ticker_endpoint} \n"
+      end
+
+    Logger.info result
+
+    result = if (result == ""), do: "No match", else: result
+
+    results = Enum.chunk_every(String.graphemes(result), 4096)
+    |> Enum.map(fn(x) -> Enum.join(x, "") end)
+
+    for result <- results do
+      {:ok, _} = send_message result
+    end
+  end
+
   command "redis" do
     # Logger module injected from App.Commander
     Logger.info "Command /redis", commands: 1
@@ -308,6 +368,15 @@ defmodule App.Commands do
     send_message "Try going to the /moon"
   end
 
+  defp command_trail(update, head) do
+    %Nadia.Model.Update{message: %Nadia.Model.Message{text: text}} = update
+    if ("/#{head} " == String.slice(text, 0..String.length(head) + 1)) do
+      String.slice(text, String.length(head) + 2..String.length(text) - 1)
+    else
+      ""
+    end
+  end
+
   defp btc_in_usd do
     api = "#{@coinmarketcap_endpoint}ticker/bitcoin/"
     resp = HTTPoison.get!(api)
@@ -339,15 +408,19 @@ defmodule App.Commands do
     end
   end
 
+  defp coinmarketcap_ticker_endpoint do
+    "#{@coinmarketcap_endpoint}ticker/"
+  end
+
   defp coinmarketcap_ticker_endpoint(ticker) do
     "#{@coinmarketcap_endpoint}ticker/#{ticker}/"
   end
 
-  def bittrex_ticker_endpoint(market) do
+  defp bittrex_ticker_endpoint(market) do
     "#{@bittrex_endpoint}getmarketsummary?market=#{market}"
   end
 
-  def binance_ticker_endpoint(symbol) do
+  defp binance_ticker_endpoint(symbol) do
     "#{@binance_endpoint}ticker/24hr?symbol=#{symbol}"
   end
 end
