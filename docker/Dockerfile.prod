@@ -12,6 +12,6 @@ RUN MIX_ENV=prod mix local.hex --force &&\
     MIX_ENV=prod mix deps.get &&\
     MIX_ENV=prod mix deps.compile
 
-RUN CRYPTOKNIGHT_DEV_BOT_NAM=${CRYPTOKNIGHT_DEV_BOT_NAME} \
+RUN CRYPTOKNIGHT_DEV_BOT_NAME=${CRYPTOKNIGHT_DEV_BOT_NAME} \
     CRYPTOKNIGHT_DEV_BOT_TOKEN=${CRYPTOKNIGHT_DEV_BOT_TOKEN} \
     MIX_ENV=prod mix compile

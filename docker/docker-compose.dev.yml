@@ -7,11 +7,16 @@ services:
       args:
         - CRYPTOKNIGHT_DEV_BOT_NAME
         - CRYPTOKNIGHT_DEV_BOT_TOKEN
+        - DOCKER_ENV
     image: cryptobot_ex_dev
     entrypoint:
       - /app/docker/docker-entrypoint.dev.sh
       - ${CRYPTOKNIGHT_DEV_BOT_NAME}
       - ${CRYPTOKNIGHT_DEV_BOT_TOKEN}
+      - ${DOCKER_ENV}
     volumes:
       - ../log:/app/log
+    restart: always
+  redis:
+    image: "redis:4.0"
     restart: always

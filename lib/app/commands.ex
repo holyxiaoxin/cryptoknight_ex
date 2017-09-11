@@ -240,9 +240,7 @@ defmodule App.Commands do
     # Logger module injected from App.Commander
     Logger.info "Command /redis", commands: 1
 
-    IO.inspect get_btc_from_redis_or_api
-
-    send_message "Hello World!"
+    send_message Float.to_string(get_btc_from_redis_or_api)
   end
 
 
@@ -386,13 +384,14 @@ defmodule App.Commands do
       200 ->
         %{"price_usd" => price_usd} = List.first(Poison.decode!(body))
         String.to_float(price_usd)
-      _ -> 0
+      _ -> 0.0
     end
   end
 
   # @res Float 3836.74
   defp get_btc_from_redis_or_api do
-    {:ok, conn} = Redix.start_link()
+    host = if (System.get_env("DOCKER_ENV") == "true"), do: "redis", else: "localhost"
+    {:ok, conn} = Redix.start_link(host: host, port: 6379)
 
     redis_res = Redix.command(conn, ["GET", "btc_price_usd"])
     case redis_res do
@@ -400,11 +399,11 @@ defmodule App.Commands do
         if (price != 0) && (price != nil) do
           String.to_float(price)
         else
-          price = btc_in_usd
+          price = btc_in_usd()
           Redix.command(conn, ["SET", "btc_price_usd", Float.to_string(price)])
           price
         end
-      _ -> 0 # redis is down?
+      _ -> 0.0 # redis is down?
     end
   end
 
