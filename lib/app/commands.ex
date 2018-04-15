@@ -147,14 +147,11 @@ defmodule App.Commands do
     tickers = [
       "bitcoin",
       "ethereum",
-      "ethereum-classic",
+      "qtum",
       "neo",
       "gas",
-      "quantum-resistant-ledger",
-      "tenx",
-      "nimiq",
       "binance-coin",
-      "district0x",
+      "switcheo",
     ]
 
     result = tickers |> Enum.map(&Task.async(fn -> {&1, HTTPoison.get!(coinmarketcap_ticker_endpoint(&1))} end))
